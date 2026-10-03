@@ -5,6 +5,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
+RUN chmod -R +x node_modules/.bin || true
 RUN npm run build
 
 # Stage 2: Build Python Backend & Serve Unified App
