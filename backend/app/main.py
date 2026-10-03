@@ -52,8 +52,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/api/health")
+def read_health():
+    return {
+        "status": "online",
+        "message": "AI Interview Simulator API is running successfully.",
+        "documentation": "/docs"
+    }
+
 @app.get("/")
 def read_root():
+    frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
+    if not os.path.exists(frontend_dist):
+        frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
+    
+    if os.path.exists(frontend_dist):
+        index_path = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+            
     return {
         "status": "online",
         "message": "AI Interview Simulator API is running successfully.",
