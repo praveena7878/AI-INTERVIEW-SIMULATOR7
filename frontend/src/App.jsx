@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard'
 import ResumeUpload from './components/ResumeUpload'
 import InterviewRoom from './components/InterviewRoom'
 import Report from './components/Report'
+import { safeFetch } from './api'
 
 function App() {
   const [userName, setUserName] = useState('')
@@ -60,8 +61,10 @@ function App() {
     e.preventDefault()
     if (!userName.trim()) return
 
+    let candidateProfile = null
+
     try {
-      const response = await fetch('/api/register', {
+      const response = await safeFetch('/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,22 +73,26 @@ function App() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        setUser(data)
-        localStorage.setItem('user_profile', JSON.stringify(data))
-        speakWelcome(data.name)
-        if (data.skills && data.skills.length > 0) {
-          setActiveScreen('dashboard')
-        } else {
-          setActiveScreen('upload')
-        }
-      } else {
-        alert('Failed to register. Please make sure the backend is running.')
+        candidateProfile = await response.json()
       }
     } catch (error) {
-      console.error('Registration error:', error)
-      alert('Could not connect to the backend server. Please verify it is running on http://localhost:8000.')
+      console.warn('Registration backend offline, using local candidate profile:', error)
     }
+
+    if (!candidateProfile || !candidateProfile.id) {
+      // Fallback candidate profile for standalone deployed frontend
+      candidateProfile = {
+        id: Date.now(),
+        name: userName,
+        skills: ['Python', 'JavaScript', 'HTML/CSS', 'SQL', 'Problem Solving'],
+        resume_json: {}
+      }
+    }
+
+    setUser(candidateProfile)
+    localStorage.setItem('user_profile', JSON.stringify(candidateProfile))
+    speakWelcome(candidateProfile.name)
+    setActiveScreen('dashboard')
   }
 
   const handleSaveKey = (e) => {
@@ -102,8 +109,10 @@ function App() {
   }
 
   const handleStartInterview = async (difficulty = 'EASY') => {
+    let interviewId = Date.now()
+
     try {
-      const response = await fetch('/api/start-interview', {
+      const response = await safeFetch('/api/start-interview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,16 +126,14 @@ function App() {
 
       if (response.ok) {
         const data = await response.json()
-        setActiveInterviewId(data.interview_id)
-        setActiveScreen('interview')
-      } else {
-        const errData = await response.json()
-        alert(`Error starting interview: ${errData.detail || 'Internal error'}`)
+        interviewId = data.interview_id
       }
     } catch (error) {
-      console.error('Start interview error:', error)
-      alert('Connection error starting interview.')
+      console.warn('Backend start-interview endpoint offline, using local session:', error)
     }
+
+    setActiveInterviewId(interviewId)
+    setActiveScreen('interview')
   }
 
   const viewReport = (interviewId) => {

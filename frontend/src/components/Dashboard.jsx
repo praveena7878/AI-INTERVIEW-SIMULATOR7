@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Play, Calendar, Trophy, BarChart2, Star, Sparkles, HelpCircle, Loader2 } from 'lucide-react'
+import { safeFetch } from '../api'
 
 function Dashboard({ user, onStartInterview, onViewReport }) {
   const [history, setHistory] = useState([])
@@ -11,19 +12,19 @@ function Dashboard({ user, onStartInterview, onViewReport }) {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const histRes = await fetch(`/api/user/${user.id}/history`)
+        const histRes = await safeFetch(`/api/user/${user.id}/history`)
         if (histRes.ok) {
           const histData = await histRes.json()
           setHistory(histData)
         }
 
-        const trendRes = await fetch(`/api/user/${user.id}/trends`)
+        const trendRes = await safeFetch(`/api/user/${user.id}/trends`)
         if (trendRes.ok) {
           const trendData = await trendRes.json()
           setTrends(trendData)
         }
       } catch (error) {
-        console.error('Error fetching dashboard details:', error)
+        console.warn('Dashboard data fetch using offline fallback:', error)
       } finally {
         setLoading(false)
       }
